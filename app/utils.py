@@ -2,6 +2,40 @@ import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 
+# Przykładowa baza danych wizyt
+VISITS_DATA = []
+
+def create_visit(visit_data):
+    """
+    Tworzenie nowej wizyty pacjenta
+    """
+    visit_data['id'] = len(VISITS_DATA) + 1  # Generowanie unikalnego ID wizyty
+    VISITS_DATA.append(visit_data)
+    return visit_data
+
+def get_visits():
+    """
+    Pobranie wszystkich wizyt pacjentów
+    """
+    return VISITS_DATA
+
+def update_visit(visit_id, updated_data):
+    """
+    Aktualizacja wizyty pacjenta na podstawie ID
+    """
+    for visit in VISITS_DATA:
+        if visit['id'] == visit_id:
+            visit.update(updated_data)
+            return visit
+    return None
+
+def delete_visit(visit_id):
+    """
+    Usunięcie wizyty pacjenta na podstawie ID
+    """
+    global VISITS_DATA
+    VISITS_DATA = [visit for visit in VISITS_DATA if visit['id'] != visit_id]
+
 # Przykładowe dane pacjentów
 PATIENTS_DATA = [
     {
@@ -102,4 +136,40 @@ def authenticate_user(username, password):
     # Możesz połączyć się z bazą danych lub korzystać z API do uwierzytelniania użytkowników
     if username == 'admin' and password == 'password':
         return True
+
+    # utils.py
+
+    VISITS_DATA = []
+
+    def create_visit(patient_id, doctor, date, time, end_time, notes):
+        visit = {
+            'id': len(VISITS_DATA) + 1,
+            'patient_id': patient_id,
+            'doctor': doctor,
+            'date': date,
+            'time': time,
+            'end_time': end_time,
+            'notes': notes
+        }
+        VISITS_DATA.append(visit)
+        return visit
+
+    def get_visits():
+        return VISITS_DATA
+
+    def update_visit(visit_id, doctor, date, time, end_time, notes):
+        for visit in VISITS_DATA:
+            if visit['id'] == visit_id:
+                visit['doctor'] = doctor
+                visit['date'] = date
+                visit['time'] = time
+                visit['end_time'] = end_time
+                visit['notes'] = notes
+                return visit
+        return None
+
+    def delete_visit(visit_id):
+        global VISITS_DATA
+        VISITS_DATA = [visit for visit in VISITS_DATA if visit['id'] != visit_id]
+
     return False

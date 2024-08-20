@@ -1,8 +1,7 @@
-from dash import Input, Output, State
+from dash import Input, Output, State, ctx
 from flask import session
 from app import app
-from app.utils import authenticate_user  # Zakładam, że funkcja jest w utils.py
-
+from app.utils import authenticate_user, send_sms_reminder, send_email_reminder, export_to_google_calendar
 
 @app.callback(
     [Output('url_login', 'pathname'),
@@ -15,11 +14,6 @@ from app.utils import authenticate_user  # Zakładam, że funkcja jest w utils.p
      State('pwd-box', 'value')]
 )
 def manage_login_logout(login_n_clicks, logout_n_clicks, username, password):
-    ctx = dash.callback_context
-
-    login_n_clicks = login_n_clicks or 0
-    logout_n_clicks = logout_n_clicks or 0
-
     if ctx.triggered:
         triggered_id = ctx.triggered[0]['prop_id'].split('.')[0]
 
@@ -39,42 +33,36 @@ def manage_login_logout(login_n_clicks, logout_n_clicks, username, password):
     else:
         return '/login', {'display': 'block'}, {'display': 'none'}, ''
 
-
-# Callback do obsługi formularza rejestracji pacjenta
 @app.callback(
-    Output('output-state', 'children'),
-    Input('submit-button', 'n_clicks'),
-    [State('input-name', 'value'),
-     State('input-birthdate', 'value'),
-     State('input-gender', 'value'),
-     State('input-pesel', 'value'),
-     State('input-address', 'value'),
-     State('input-phone', 'value'),
-     State('input-email', 'value'),
-     State('upload-health-card', 'contents')]
+    Output('med-registration-feedback', 'children'),
+    Input('register-med-button', 'n_clicks'),
+    [State('input-med-name', 'value'),
+     State('input-med-quantity', 'value'),
+     State('input-med-expiry', 'value'),
+     State('input-med-price', 'value')]
 )
-def register_patient(n_clicks, name, birthdate, gender, pesel, address, phone, email, health_card):
+def register_medication(n_clicks, name, quantity, expiry, price):
     if n_clicks:
-        # Przykładowa logika rejestracji pacjenta - tutaj można dodać zapisywanie do bazy danych
-        if not name or not birthdate or not pesel or not phone:
+        if not name or not quantity or not expiry or not price:
             return "Proszę wypełnić wszystkie wymagane pola."
 
-        # Weryfikacja numeru PESEL (przykład)
-        if len(pesel) != 11 or not pesel.isdigit():
-            return "Nieprawidłowy numer PESEL."
+        # Logika zapisywania leku
+        # Tutaj dodaj kod do zapisania leku w bazie danych lub w pamięci aplikacji
 
-        # Zapisz dane pacjenta do bazy danych (tutaj przykładowo w session)
-        session['last_registered_patient'] = {
-            'name': name,
-            'birthdate': birthdate,
-            'gender': gender,
-            'pesel': pesel,
-            'address': address,
-            'phone': phone,
-            'email': email,
-            'health_card': health_card
-        }
+        return f"Lek {name} został pomyślnie zarejestrowany."
+    return ""
 
-        return f"Pacjent {name} został pomyślnie zarejestrowany."
+@app.callback(
+    Output('orders-history', 'children'),
+    Input('view-orders-button', 'n_clicks'),
+    [State('input-order-number', 'value'),
+     State('input-order-date', 'value'),
+     State('input-order-status', 'value')]
+)
+def view_orders(n_clicks, order_number, order_date, order_status):
+    if n_clicks:
+        # Logika przeglądania zamówień
+        # Tutaj dodaj kod do przetwarzania i wyświetlania zamówień
 
-    return ""  # Zwróć pusty ciąg jeśli przycisk nie został jeszcze kliknięty
+        return f"Wyświetlane są zamówienia: {order_number}, {order_date}, {order_status}."
+    return ""
