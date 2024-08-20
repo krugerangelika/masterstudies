@@ -1,6 +1,8 @@
 import dash
-from dash import dcc, html
+from dash import dcc, html, Input, Output, State
 import dash_bootstrap_components as dbc
+from sqlalchemy.orm import sessionmaker
+from app.database import SessionLocal, Patient
 
 def create_patient_registration_layout():
     return dbc.Container([
@@ -141,18 +143,67 @@ def create_patient_registration_layout():
                 dbc.Col(dbc.Label("Alergie")),
                 dbc.Col(dbc.Textarea(id="input-allergies", placeholder="Alergie pacjenta")),
             ], className="mb-3"),
-            dbc.Button("Zarejestruj Pacjenta", id="submit-button", color="primary"),
-            html.Div(id="output-state", className="mt-3")
-        ], className="mt-5")
+            dbc.Button("Zarejestruj Pacjenta", id="submit-button", color="primary", n_clicks=0),
+            html.Div(id="output-state", className="mt-3"),
+            dbc.Col(dbc.Button("Powrót do Panelu Głównego", href="/main-panel/", color="secondary", n_clicks=0,
+                               className="me-2")),
+        ], className="mt-5"),
     ], className="mt-5")
+
 
 def create_patient_registration(server):
     app = dash.Dash(
         server=server,
-        routes_pathname_prefix='/main-panel/patient-registration/',
+        routes_pathname_prefix='/patient-registration/',  # Zmiana na właściwą trasę
         external_stylesheets=[dbc.themes.BOOTSTRAP]
     )
 
     app.layout = create_patient_registration_layout()
+
+    @app.callback(
+        Output('output-state', 'children'),
+        Input('submit-button', 'n_clicks'),
+        State('input-name', 'value'),
+        State('input-birthdate', 'value'),
+        State('input-gender', 'value'),
+        State('input-pesel', 'value'),
+        State('input-address', 'value'),
+        State('input-phone', 'value'),
+        State('input-email', 'value'),
+        State('input-department', 'value'),
+        State('input-insurance-number', 'value'),
+        State('input-blood-group', 'value'),
+        State('input-id-type', 'value'),
+        State('input-id-number', 'value'),
+        State('input-medical-history', 'value'),
+        State('input-allergies', 'value')
+    )
+    def register_patient(n_clicks, name, birthdate, gender, pesel, address, phone, email, department, insurance_number,
+                         blood_group, id_type, id_number, medical_history, allergies):
+        if n_clicks > 0:
+            try:
+                db = SessionLocal()
+                new_patient = Patient(
+                    full_name=name,
+                    birthdate=birthdate,
+                    gender=gender,
+                    pesel=pesel,
+                    address=address,
+                    phone=phone,
+                    email=email,
+                    department=department,
+                    insurance_number=insurance_number,
+                    blood_group=blood_group,
+                    id_type=id_type,
+                    id_number=id_number,
+                    medical_history=medical_history,
+                    allergies=allergies
+                )
+                db.add(new_patient)
+                db.commit()
+                return f'Pacjent {name} został pomyślnie zarejestrowany!'
+            except Exception as e:
+                return f'Wystąpił błąd: {str(e)}'
+        return ''
 
     return app

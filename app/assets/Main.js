@@ -17,6 +17,13 @@ const updates = [
 ];
 
 ReactDOM.render(
-    <MaterialUpdates updates={updates} />,
+    <>
+        <MaterialUpdates updates={updates} />
+        <MaterialButton
+            label="Zarejestruj Pacjenta"
+            variant="contained"
+            color="primary"
+        />
+    </>,
     document.getElementById("updates-section")
 );

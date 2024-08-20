@@ -1,13 +1,13 @@
 import dash
-from dash import html, dcc
+from dash import dcc, html, Input, Output, State
 import dash_bootstrap_components as dbc
-from dash.dependencies import Input, Output
+from flask import session
 from app.sidebar import create_sidebar
 from app.patient_registration import create_patient_registration_layout
-from app.patient_visits import create_patient_visits_layout
-from app.team_schedule import create_team_schedule_layout
-from app.pharmacy_management import create_pharmacy_management_layout  # Dodano import
-from app.utils import get_latest_updates, get_patients_data
+from app.patient_list import PatientList
+from app.patient_details import PatientDetails
+from app.patient_cards import PatientCards
+from app.database import SessionLocal, Patient
 
 def create_main_panel(server):
     app = dash.Dash(
@@ -16,13 +16,30 @@ def create_main_panel(server):
         external_stylesheets=[dbc.themes.BOOTSTRAP]
     )
 
+    patient_cards = PatientCards()
+
     app.layout = html.Div(
         [
             dcc.Location(id='url', refresh=False),
-            create_sidebar(),
+            html.Div(id='sidebar', children=create_sidebar(), style={
+                "position": "fixed", "top": 0, "left": 0, "bottom": 0, "width": "18rem", "padding": "2rem 1rem", "backgroundColor": "#f8f9fa"
+            }),
             html.Div(id='page-content', style={"marginLeft": "18rem", "padding": "2rem 1rem"})
         ]
     )
+
+    @app.callback(
+        Output('sidebar', 'style'),
+        Output('page-content', 'style'),
+        Input('url', 'pathname')
+    )
+    def toggle_sidebar(pathname):
+        if pathname == '/patient-registration/':
+            return {"display": "none"}, {"marginLeft": "0", "padding": "2rem 1rem"}
+        else:
+            return {
+                "position": "fixed", "top": 0, "left": 0, "bottom": 0, "width": "18rem", "padding": "2rem 1rem", "backgroundColor": "#f8f9fa"
+            }, {"marginLeft": "18rem", "padding": "2rem 1rem"}
 
     @app.callback(
         Output('page-content', 'children'),
@@ -30,52 +47,26 @@ def create_main_panel(server):
     )
     def display_page(pathname):
         if pathname == '/main-panel/':
-            return html.Div([
-                html.H1("Witaj, Admin!"),
-                html.Div(id="updates-section", style={'marginTop': '20px'}),
-                html.Div(id="patient-list", style={'padding': '20px', 'maxWidth': '1200px', 'margin': 'auto'}),
-                html.Div(id="quick-actions", style={'marginTop': '20px'}),
-            ])
-        elif pathname == '/main-panel/patient-registration/':
+            return html.H1(f"Witaj, {session.get('username', 'User')}!")
+        elif pathname == '/main-panel/patient-list/':
+            patient_list = PatientList()
+            layout = patient_list.create_patient_list_layout()
+            patient_list.close_session()
+            return layout
+        elif pathname.startswith('/main-panel/patient-details/'):
+            patient_id = int(pathname.split('/')[-1])
+            patient_details = PatientDetails(patient_id)
+            layout = patient_details.create_patient_details_layout()
+            patient_details.close_session()
+            return layout
+        elif pathname.startswith('/main-panel/patient-edit/'):
+            patient_id = int(pathname.split('/')[-1])
+            return patient_cards.create_patient_edit_layout(patient_id)
+        elif pathname == '/patient-registration/':
             return create_patient_registration_layout()
-        elif pathname == '/main-panel/patient-visits/':
-            return create_patient_visits_layout()
-        elif pathname == '/main-panel/team-schedule/':
-            return create_team_schedule_layout()
-        elif pathname == '/main-panel/pharmacy-management/':  # Dodano nową sekcję
-            return create_pharmacy_management_layout()
-        return html.Div("Strona nie została znaleziona.")
-
-    @app.callback(
-        [Output('updates-section', 'children'),
-         Output('patient-list', 'children')],
-        [Input('url', 'pathname')]
-    )
-    def update_home_content(pathname):
-        if pathname == '/main-panel/':
-            updates = get_latest_updates()
-            updates_list = [
-                dbc.Card(
-                    dbc.CardBody([
-                        html.H5(update['title'], className="card-title"),
-                        html.P(update['content'], className="card-text"),
-                        html.Small(f"Data: {update['date']}", className="text-muted")
-                    ])
-                ) for update in updates
-            ]
-            patients = get_patients_data()
-            patient_cards = [
-                dbc.Card(
-                    dbc.CardBody([
-                        html.H4(f"{patient['name']}, {patient['age']} lat", className="card-title"),
-                        html.P(f"Płeć: {patient['gender']}", className="card-text"),
-                        html.P(f"Pokój: {patient['room']} - Oddział: {patient['ward']}", className="card-text"),
-                        html.P(f"Stan zdrowia: {patient['health_status']}", className="card-text"),
-                        dbc.Button("Zarządzaj wizytą", color="primary", href=f"/main-panel/patient-visits/{patient['id']}")
-                    ])
-                ) for patient in patients
-            ]
-            return updates_list, patient_cards
-        return [], []
+        elif pathname == '/main-panel/patient-cards/':
+            return patient_cards.create_patient_cards_layout()
+        else:
+            return html.Div("Strona nie została znaleziona.")
 
     return app

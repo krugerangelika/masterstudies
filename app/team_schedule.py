@@ -4,7 +4,7 @@ import dash_bootstrap_components as dbc
 
 def create_team_schedule_layout():
     return dbc.Container([
-        html.H2("Harmonogram Zespołu Medycznego"),
+        html.H2("Grafik Zespołu Medycznego"),
         dbc.Form([
             dbc.Row([
                 dbc.Col(dbc.Label("Data")),

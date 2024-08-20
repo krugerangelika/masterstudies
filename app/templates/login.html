@@ -7,26 +7,26 @@
     <style>
         body {
             background-image: url("/static/images/background.jpg");
-            background-size: cover; /* Utrzymuje proporcje obrazu i wypełnia całe tło */
-            background-position: center; /* Wyśrodkowanie obrazu */
-            background-attachment: fixed; /* Sprawia, że obraz pozostaje na miejscu podczas przewijania */
-            background-repeat: no-repeat; /* Zapobiega powtarzaniu obrazu */
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            background-repeat: no-repeat;
             width: 100%;
-            height: 100vh; /* Utrzymuje tło na wysokości całego ekranu */
+            height: 100vh;
             margin: 0;
             padding: 0;
             font-family: Arial, sans-serif;
             color: white;
         }
-        .login-form {
+        .login-form, .register-form {
             max-width: 350px;
-            margin: 100px auto;
+            margin: 20px auto;
             padding: 20px;
             background: rgba(0, 0, 0, 0.8);
             border-radius: 15px;
             box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
         }
-        .login-form h2 {
+        h2 {
             text-align: center;
             margin-bottom: 20px;
             font-weight: 300;
@@ -46,7 +46,7 @@
             border-radius: 5px;
             box-sizing: border-box;
         }
-        .login-form button {
+        .login-form button, .register-form button {
             width: 100%;
             padding: 10px;
             background-color: #28a745;
@@ -57,7 +57,7 @@
             cursor: pointer;
             transition: background-color 0.3s ease;
         }
-        .login-form button:hover {
+        .login-form button:hover, .register-form button:hover {
             background-color: #218838;
         }
         .alert {
@@ -71,7 +71,7 @@
             z-index: 1000;
             width: 300px;
             text-align: center;
-            display: none; /* Domyślnie ukryty */
+            display: none;
         }
         .alert-success {
             background-color: green;
@@ -106,18 +106,40 @@
         {% endwith %}
     </div>
 
+    <div class="register-form">
+        <h2>Register a New Account</h2>
+        <form method="POST" action="/register">
+            <div class="form-group">
+                <label for="new_username">Username:</label>
+                <input type="text" id="new_username" name="new_username" required>
+            </div>
+            <div class="form-group">
+                <label for="new_email">Email:</label>
+                <input type="email" id="new_email" name="new_email" required>
+            </div>
+            <div class="form-group">
+                <label for="new_full_name">Full Name:</label>
+                <input type="text" id="new_full_name" name="new_full_name" required>
+            </div>
+            <div class="form-group">
+                <label for="new_password">Password:</label>
+                <input type="password" id="new_password" name="new_password" required>
+            </div>
+            <button type="submit">Register</button>
+        </form>
+    </div>
+
     <script>
-        // Funkcja do wyświetlania komunikatu i przekierowania lub ukrycia
         const alertDiv = document.getElementById('flash-message');
         if (alertDiv) {
-            alertDiv.style.display = 'block'; // Pokaż element
+            alertDiv.style.display = 'block';
             if (alertDiv.classList.contains('alert-success')) {
                 setTimeout(function() {
-                    window.location.href = "/dash"; // Przekierowanie na dashboard po 2 sekundach
+                    window.location.href = "/dash";
                 }, 4000);
             } else {
                 setTimeout(function() {
-                    alertDiv.style.display = 'none'; // Ukryj komunikat po 2 sekundach
+                    alertDiv.style.display = 'none';
                 }, 4000);
             }
         }

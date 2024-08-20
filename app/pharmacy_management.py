@@ -1,24 +1,20 @@
 import dash
-from dash import dcc, html
+from dash import dcc, html, callback_context
 import dash_bootstrap_components as dbc
-from dash.dependencies import Input, Output
+from dash.dependencies import Input, Output, State, MATCH
 import random
+from datetime import datetime, timedelta
 
-
-def generate_mock_drug_data(n=100):
-    """
-    Generate a list of mock drug data for testing purposes.
-    """
+# Funkcja generująca przykładowe dane o lekach
+def generate_mock_drug_data(n=10):
     drug_names = [
         "Aspirin", "Paracetamol", "Ibuprofen", "Amoxicillin", "Metformin",
         "Simvastatin", "Omeprazole", "Losartan", "Gabapentin", "Hydrochlorothiazide"
     ]
-
     manufacturers = [
         "PharmaCorp", "HealthGen", "MedLife", "BioPharma", "WellCare",
         "MediPro", "GlobalMed", "CarePlus", "BioMedix", "HealthFirst"
     ]
-
     descriptions = [
         "Stosowany do leczenia bólu i gorączki.",
         "Lek przeciwwirusowy stosowany w leczeniu infekcji.",
@@ -31,60 +27,66 @@ def generate_mock_drug_data(n=100):
         "Lek przeciwbólowy stosowany w neuropatii.",
         "Diuretyk stosowany w leczeniu nadciśnienia."
     ]
-
     data = []
     for i in range(n):
         data.append({
+            'id': i,
             'name': random.choice(drug_names),
             'manufacturer': random.choice(manufacturers),
-            'description': random.choice(descriptions)
+            'description': random.choice(descriptions),
+            'order_date': "",
+            'delivery_date': "",
+            'status': ""
         })
-
     return data
 
+# Funkcja tworząca layout zarządzania lekami
+def create_pharmacy_management_layout(drug_data):
+    table_header = [
+        html.Thead(html.Tr([html.Th("Nazwa Leku"), html.Th("Producent"), html.Th("Opis"), html.Th("Akcja"), html.Th("Data zamówienia"), html.Th("Data dostawy"), html.Th("Status zamówienia")]))
+    ]
 
-def create_pharmacy_management_layout():
-    """
-    Function to create the layout for the pharmacy management section.
-    """
+    table_rows = []
+    for drug in drug_data:
+        row = html.Tr([
+            html.Td(drug['name']),
+            html.Td(drug['manufacturer']),
+            html.Td(drug['description']),
+            html.Td(dbc.Button("Zamów z apteki", id={'type': 'order-button', 'index': drug['id']}, color="primary")),
+            html.Td(drug['order_date'], id={'type': 'order-date', 'index': drug['id']}),
+            html.Td(drug['delivery_date'], id={'type': 'delivery-date', 'index': drug['id']}),
+            html.Td(drug['status'], id={'type': 'status', 'index': drug['id']})
+        ])
+        table_rows.append(row)
+
+    table_body = [html.Tbody(table_rows)]
+
     return dbc.Container([
         html.H1("Zarządzanie Lekami i Apteką", className="my-4 text-center"),
-        html.Div(id='pharmacy-content')  # Ten element zostanie zaktualizowany
+        dbc.Table(table_header + table_body, bordered=True, hover=True, responsive=True, striped=True)
     ], fluid=True)
 
-
-def create_pharmacy_management(app):
-    """
-    Function to create a Dash app for pharmacy management.
-    """
-    dash_app = dash.Dash(__name__, server=app, routes_pathname_prefix='/main-panel/pharmacy-management/',
+# Funkcja tworząca aplikację Dash do zarządzania lekami
+def create_pharmacy_management(server):
+    dash_app = dash.Dash(__name__, server=server, routes_pathname_prefix='/main-panel/pharmacy-management/',
                          external_stylesheets=[dbc.themes.BOOTSTRAP])
 
-    # Define layout
-    dash_app.layout = create_pharmacy_management_layout()
+    drug_data = generate_mock_drug_data(10)  # Generowanie danych o lekach
+    dash_app.layout = create_pharmacy_management_layout(drug_data)  # Przekazanie danych do layoutu
 
     @dash_app.callback(
-        Output('pharmacy-content', 'children'),
-        [Input('pharmacy-content', 'id')]
+        [Output({'type': 'order-date', 'index': MATCH}, 'children'),
+         Output({'type': 'delivery-date', 'index': MATCH}, 'children'),
+         Output({'type': 'status', 'index': MATCH}, 'children')],
+        [Input({'type': 'order-button', 'index': MATCH}, 'n_clicks')]
     )
-    def render_pharmacy_content(_):
-        drug_data = generate_mock_drug_data(100)  # Generuj 100 pozycji z danymi leków
-
-        table_header = [
-            html.Thead(html.Tr([html.Th("Nazwa Leku"), html.Th("Producent"), html.Th("Opis")]))
-        ]
-
-        table_rows = []
-        for drug in drug_data:
-            row = html.Tr([
-                html.Td(drug['name']),
-                html.Td(drug['manufacturer']),
-                html.Td(drug['description'])
-            ])
-            table_rows.append(row)
-
-        table_body = [html.Tbody(table_rows)]
-
-        return dbc.Table(table_header + table_body, bordered=True, hover=True, responsive=True, striped=True)
+    def update_order_status(n_clicks):
+        if n_clicks and n_clicks > 0:
+            order_date = datetime.now().strftime('%Y-%m-%d %H:%M')
+            delivery_date = (datetime.now() + timedelta(days=3)).strftime('%Y-%m-%d %H:%M')
+            status = "Zamówiono"
+            return order_date, delivery_date, status
+        return "", "", ""
 
     return dash_app
+
